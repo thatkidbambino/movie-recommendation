@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Dashboard from "./pages/Dashboard";
 import LoginPage from "./pages/LoginPage";
@@ -7,9 +7,16 @@ import RegisterPage from "./pages/RegisterPage";
 import * as Toast from "@radix-ui/react-toast";
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem("token") || "");
+  const [token, setToken] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
+      setToken(storedToken);
+    }
+  }, []);
 
   const handleLogout = () => {
     setToken("");
@@ -24,17 +31,25 @@ function App() {
         <Navbar onLogout={handleLogout} />
         <main className="p-6 max-w-5xl mx-auto">
           <Routes>
-            <Route
-              path="/"
-              element={<Navigate to={token ? "/dashboard" : "/login"} />}
-            />
+            <Route path="/" element={<Navigate to={token ? "/dashboard" : "/login"} />} />
             <Route
               path="/login"
-              element={<LoginPage setToken={setToken} setToastMessage={setToastMessage} setShowToast={setShowToast} />}
+              element={
+                <LoginPage
+                  setToken={setToken}
+                  setToastMessage={setToastMessage}
+                  setShowToast={setShowToast}
+                />
+              }
             />
             <Route
               path="/register"
-              element={<RegisterPage setToastMessage={setToastMessage} setShowToast={setShowToast} />}
+              element={
+                <RegisterPage
+                  setToastMessage={setToastMessage}
+                  setShowToast={setShowToast}
+                />
+              }
             />
             <Route
               path="/dashboard"
