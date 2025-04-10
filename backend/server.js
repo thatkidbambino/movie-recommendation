@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const sequelize = require('./sequelize');
+require('./mongoose');
 const User = require('./models/User');
 const Movie = require('./models/Movie');
 
@@ -11,18 +11,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Sync Database
-sequelize
-  .sync()
-  .then(() => console.log('Database synced'))
-  .catch((err) => console.error('Sync error:', err));
-
 // Middleware
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization'];
   if (!token) return res.status(403).json({ message: 'No token provided' });
 
-  jwt.verify(token, 'your_jwt_secret', (err, decoded) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) return res.status(401).json({ message: 'Unauthorized' });
     req.userId = decoded.id;
     next();
@@ -33,12 +27,13 @@ const authenticateToken = (req, res, next) => {
 app.post('/api/auth/register', async (req, res) => {
   const { username, password } = req.body;
   try {
-    const existingUser = await User.findOne({ where: { username } });
+    const existingUser = await User.findOne({ username });
     if (existingUser)
       return res.status(400).json({ message: 'Username already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await User.create({ username, password: hashedPassword });
+    const newUser = new User({ username, password: hashedPassword });
+    await newUser.save();
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
@@ -50,14 +45,14 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   const { username, password } = req.body;
   try {
-    const user = await User.findOne({ where: { username } });
+    const user = await User.findOne({ username });
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid)
       return res.status(400).json({ message: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user.id }, 'your_jwt_secret', {
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: '1d',
     });
     res.json({ token });
@@ -69,7 +64,7 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/movies', authenticateToken, async (req, res) => {
   try {
-    const movies = await Movie.findAll({ where: { UserId: req.userId } });
+    const movies = await Movie.find({ userId: req.userId });
     res.json(movies);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch movies' });
@@ -79,12 +74,13 @@ app.get('/api/movies', authenticateToken, async (req, res) => {
 app.post('/api/movies', authenticateToken, async (req, res) => {
   const { title, tmdbId, rating } = req.body;
   try {
-    const newMovie = await Movie.create({
+    const newMovie = new Movie({
       title,
       tmdbId,
       rating,
-      UserId: req.userId,
+      userId: req.userId,
     });
+    await newMovie.save();
     res.status(201).json(newMovie);
   } catch (error) {
     res.status(500).json({ error: 'Failed to add movie' });
@@ -94,9 +90,7 @@ app.post('/api/movies', authenticateToken, async (req, res) => {
 app.put('/api/movies/:id', authenticateToken, async (req, res) => {
   const { rating } = req.body;
   try {
-    const movie = await Movie.findOne({
-      where: { id: req.params.id, UserId: req.userId },
-    });
+    const movie = await Movie.findOne({ _id: req.params.id, userId: req.userId });
     if (!movie) return res.status(404).json({ message: 'Movie not found' });
 
     movie.rating = rating;
@@ -109,10 +103,8 @@ app.put('/api/movies/:id', authenticateToken, async (req, res) => {
 
 app.delete('/api/movies/:id', authenticateToken, async (req, res) => {
   try {
-    const result = await Movie.destroy({
-      where: { id: req.params.id, UserId: req.userId },
-    });
-    if (!result) return res.status(404).json({ message: 'Movie not found' });
+    const result = await Movie.deleteOne({ _id: req.params.id, userId: req.userId });
+    if (result.deletedCount === 0) return res.status(404).json({ message: 'Movie not found' });
     res.json({ message: 'Movie deleted' });
   } catch (error) {
     res.status(500).json({ error: 'Failed to delete movie' });

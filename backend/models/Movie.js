@@ -1,24 +1,24 @@
 // backend/models/Movie.js
-const { DataTypes } = require('sequelize');
-const sequelize = require('../sequelize');
-const User = require('./User');
+const mongoose = require('mongoose');
 
-const Movie = sequelize.define('Movie', {
+const movieSchema = new mongoose.Schema({
   title: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
   },
   tmdbId: {
-    type: DataTypes.STRING,
-    allowNull: false,
+    type: String,
+    required: true,
   },
   rating: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0,
+    type: Number,
+    default: 0,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
   },
 });
 
-Movie.belongsTo(User);
-User.hasMany(Movie);
-
-module.exports = Movie;
+module.exports = mongoose.model('Movie', movieSchema);
