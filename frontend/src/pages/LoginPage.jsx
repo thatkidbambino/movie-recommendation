@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+const backendURL = import.meta.env.VITE_BACKEND_URL;
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
@@ -11,7 +13,7 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', { username, password });
+      const res = await axios.post(`${backendURL}/api/auth/login`, { username, password });
       localStorage.setItem('token', res.data.token);
       navigate('/dashboard');
     } catch (err) {
@@ -47,10 +49,7 @@ export default function LoginPage() {
         </form>
         <p className="mt-4 text-center">
           Don’t have an account?{' '}
-          <span
-            className="text-blue-400 cursor-pointer"
-            onClick={() => navigate('/register')}
-          >
+          <span className="text-blue-400 cursor-pointer" onClick={() => navigate('/register')}>
             Register here
           </span>
         </p>

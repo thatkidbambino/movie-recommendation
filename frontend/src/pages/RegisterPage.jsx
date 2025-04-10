@@ -11,7 +11,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/auth/register', { username, password });
+      await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/register`, { username, password });
       navigate('/login');
     } catch (err) {
       setError('Registration failed. Username may already exist.');
