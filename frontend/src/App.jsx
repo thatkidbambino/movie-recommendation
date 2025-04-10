@@ -26,7 +26,7 @@ function App() {
           <Routes>
             <Route
               path="/"
-              element={token ? <Dashboard token={token} /> : <Navigate to="/login" />}
+              element={<Navigate to={token ? "/dashboard" : "/login"} />}
             />
             <Route
               path="/login"
@@ -35,6 +35,10 @@ function App() {
             <Route
               path="/register"
               element={<RegisterPage setToastMessage={setToastMessage} setShowToast={setShowToast} />}
+            />
+            <Route
+              path="/dashboard"
+              element={token ? <Dashboard token={token} /> : <Navigate to="/login" />}
             />
           </Routes>
         </main>
