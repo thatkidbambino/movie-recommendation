@@ -1,4 +1,3 @@
-// backend/server.js
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
@@ -26,18 +25,25 @@ const authenticateToken = (req, res, next) => {
 // Routes
 app.post('/api/auth/register', async (req, res) => {
   const { username, password } = req.body;
+  console.log('🛬 Incoming registration attempt:', { username });
+
   try {
     const existingUser = await User.findOne({ username });
-    if (existingUser)
+    console.log('🔍 Existing user found:', existingUser);
+
+    if (existingUser) {
+      console.log('🚫 Registration blocked: username taken');
       return res.status(400).json({ message: 'Username already exists' });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, password: hashedPassword });
     await newUser.save();
 
+    console.log('✅ New user registered:', newUser);
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    console.error('Registration Error:', error);
+    console.error('❌ Registration Error:', error);
     res.status(500).json({ error: 'Registration failed' });
   }
 });
